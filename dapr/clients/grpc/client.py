@@ -16,6 +16,13 @@ limitations under the License.
 import time
 import socket
 
+from urllib.parse import urlencode
+
+from typing import Dict, Optional, Union, Sequence, List
+
+from google.protobuf.message import Message as GrpcMessage
+from google.protobuf.empty_pb2 import Empty as GrpcEmpty
+
 import grpc  # type: ignore
 from grpc import (  # type: ignore
     UnaryUnaryClientInterceptor,
@@ -25,12 +32,6 @@ from grpc import (  # type: ignore
 )
 
 from dapr.clients.grpc._state import StateOptions, StateItem
-
-from typing import Dict, Optional, Union, Sequence, List
-
-from google.protobuf.message import Message as GrpcMessage
-from google.protobuf.empty_pb2 import Empty as GrpcEmpty
-
 from dapr.conf import settings
 from dapr.proto import api_v1, api_service_v1, common_v1
 
@@ -50,8 +51,6 @@ from dapr.clients.grpc._response import (
     BulkStatesResponse,
     BulkStateItem,
 )
-
-from urllib.parse import urlencode
 
 
 class DaprGrpcClient:
@@ -444,6 +443,47 @@ class DaprGrpcClient:
             store_name=store_name,
             keys=keys,
             parallelism=parallelism,
+            metadata=states_metadata)
+        response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+
+        items = []
+        for item in response.items:
+            items.append(
+                BulkStateItem(
+                    key=item.key,
+                    data=item.data,
+                    etag=item.etag,
+                    error=item.error))
+        return BulkStatesResponse(
+            items=items,
+            headers=call.initial_metadata())
+
+    def query_state_alpha1(
+            self,
+            store_name: str,
+            query: str,
+            states_metadata: Optional[Dict[str, str]] = dict(),
+            metadata: Optional[MetadataTuple] = ()) -> BulkStatesResponse:
+        """Queries a statestore with a query
+
+        Example here
+
+        Args:
+            store_name (str): the state store name to get from
+            query (str): the query to be executed
+            states_metadata (Dict[str, str], optional): custom metadata for state request
+            metadata (tuple, optional): custom metadata
+
+        Returns:
+            :class:`BulkStatesResponse` gRPC metadata returned from callee
+            and value obtained from the state store
+        """
+
+        if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
+            raise ValueError("State store name cannot be empty")
+        req = api_v1.QueryStateRequest(
+            store_name=store_name,
+            query=query,
             metadata=states_metadata)
         response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
 
