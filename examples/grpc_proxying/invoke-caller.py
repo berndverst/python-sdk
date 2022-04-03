@@ -3,8 +3,8 @@ import logging
 
 import grpc
 import helloworld_service_pb2_grpc
-from helloworld_service_pb2 import HelloRequest, HelloReply
-import json, time
+from helloworld_service_pb2 import HelloRequest
+
 
 async def run() -> None:
     async with grpc.aio.insecure_channel('127.0.0.1:50007') as channel:
@@ -17,4 +17,3 @@ if __name__ == '__main__':
     print('I am in main')
     logging.basicConfig()
     asyncio.run(run())
-

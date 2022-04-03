@@ -1,24 +1,29 @@
+import asyncio
 import json
 import time
 
 from dapr.clients import DaprClient
 
-with DaprClient() as d:
-    req_data = {
-        'id': 1,
-        'message': 'hello world'
-    }
 
-    while True:
-        # Create a typed message with content type and body
-        resp = d.invoke_method(
-            'invoke-receiver',
-            'my-method',
-            data=json.dumps(req_data),
-        )
+async def runAsync():
+    with DaprClient() as d:
+        req_data = {
+            'id': 1,
+            'message': 'hello world'
+        }
 
-        # Print the response
-        print(resp.content_type, flush=True)
-        print(resp.text(), flush=True)
+        while True:
+            # Create a typed message with content type and body
+            resp = await d.invoke_method(
+                'invoke-receiver',
+                'my-method',
+                data=json.dumps(req_data),
+            )
 
-        time.sleep(2)
+            # Print the response
+            print(resp.content_type, flush=True)
+            print(resp.text(), flush=True)
+
+            time.sleep(2)
+
+asyncio.run(runAsync())

@@ -42,29 +42,30 @@ class App:
         """
         self._servicer = _CallbackServicer()
         if not kwargs:
-            self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))   # type: ignore
+            # type: ignore
+            self._server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
         else:
-            self._server = grpc.server(**kwargs)   # type: ignore
+            self._server = grpc.aio.server(**kwargs)   # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
 
-    def __del__(self):
-        self.stop()
+    async def __del__(self):
+        await self.stop()
 
     def add_external_service(self, servicer_callback, external_servicer):
         """Adds an external gRPC service to the same server"""
         servicer_callback(external_servicer, self._server)
 
-    def run(self, app_port: Optional[int]) -> None:
+    async def run(self, app_port: Optional[int]) -> None:
         """Starts app gRPC server and waits until :class:`App`.stop() is called."""
         if app_port is None:
             app_port = settings.GRPC_APP_PORT
-        self._server.add_insecure_port(f'[::]:{app_port}')
-        self._server.start()
-        self._server.wait_for_termination()
+        await self._server.add_insecure_port(f'[::]:{app_port}')
+        await self._server.start()
+        await self._server.wait_for_termination()
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         """Stops app server."""
-        self._server.stop(0)
+        await self._server.stop(0)
 
     def method(self, name: str):
         """A decorator that is used to register the method for the service invocation.

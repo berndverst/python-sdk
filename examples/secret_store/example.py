@@ -11,24 +11,28 @@
 # limitations under the License.
 # ------------------------------------------------------------
 
+import asyncio
 from dapr.clients import DaprClient
 
-with DaprClient() as d:
-    key = 'secretKey'
-    randomKey = "random"
-    storeName = 'localsecretstore'
 
-    resp = d.get_secret(store_name=storeName, key=key)
-    print('Got!')
-    print(resp.secret)
-    resp = d.get_bulk_secret(store_name=storeName)
-    print('Got!')
-    # Converts dict into sorted list of tuples for deterministic output.
-    print(sorted(resp.secrets.items()))
-    try:
-        resp = d.get_secret(store_name=storeName, key=randomKey)
+async def runAsync():
+    with DaprClient() as d:
+        key = 'secretKey'
+        randomKey = "random"
+        storeName = 'localsecretstore'
+
+        resp = await d.get_secret(store_name=storeName, key=key)
         print('Got!')
         print(resp.secret)
-    except:
-        print("Got expected error for accessing random key")
+        resp = await d.get_bulk_secret(store_name=storeName)
+        print('Got!')
+        # Converts dict into sorted list of tuples for deterministic output.
+        print(sorted(resp.secrets.items()))
+        try:
+            resp = await d.get_secret(store_name=storeName, key=randomKey)
+            print('Got!')
+            print(resp.secret)
+        except Exception:
+            print("Got expected error for accessing random key")
 
+asyncio.run(runAsync())

@@ -11,19 +11,19 @@ from dapr.proto.runtime.v1.dapr_pb2 import QueryStateItem
 
 class FakeDaprSidecar(api_service_v1.DaprServicer):
     def __init__(self):
-        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self._server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
         api_service_v1.add_DaprServicer_to_server(self, self._server)
         self.store = {}
         self.shutdown_received = False
 
-    def start(self, port: int = 8080):
+    async def start(self, port: int = 8080):
         self._server.add_insecure_port(f'[::]:{port}')
-        self._server.start()
+        await self._server.start()
 
-    def stop(self):
-        self._server.stop(None)
+    async def stop(self):
+        await self._server.stop(None)
 
-    def InvokeService(self, request, context) -> common_v1.InvokeResponse:
+    async def InvokeService(self, request, context) -> common_v1.InvokeResponse:
         headers = ()
         trailers = ()
 
@@ -45,7 +45,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return common_v1.InvokeResponse(data=resp, content_type=content_type)
 
-    def InvokeBinding(self, request, context) -> api_v1.InvokeBindingResponse:
+    async def InvokeBinding(self, request, context) -> api_v1.InvokeBindingResponse:
         headers = ()
         trailers = ()
 
@@ -65,7 +65,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.InvokeBindingResponse(data=resp_data, metadata=metadata)
 
-    def PublishEvent(self, request, context):
+    async def PublishEvent(self, request, context):
         headers = ()
         trailers = ()
         if request.topic:
@@ -86,7 +86,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
-    def SaveState(self, request, context):
+    async def SaveState(self, request, context):
         headers = ()
         trailers = ()
         for state in request.states:
@@ -102,7 +102,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
-    def ExecuteStateTransaction(self, request, context):
+    async def ExecuteStateTransaction(self, request, context):
         headers = ()
         trailers = ()
         for operation in request.operations:
@@ -118,7 +118,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
-    def GetState(self, request, context):
+    async def GetState(self, request, context):
         key = request.key
         if key not in self.store:
             return empty_pb2.Empty()
@@ -128,7 +128,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
                 data = to_bytes(data.decode("utf-8").upper())
             return api_v1.GetStateResponse(data=data, etag=etag)
 
-    def GetBulkState(self, request, context):
+    async def GetBulkState(self, request, context):
         items = []
         for key in request.keys:
             req = api_v1.GetStateRequest(store_name=request.store_name, key=key)
@@ -140,7 +140,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
             items.append(api_v1.BulkStateItem(key=key, etag=etag, data=data))
         return api_v1.GetBulkStateResponse(items=items)
 
-    def DeleteState(self, request, context):
+    async def DeleteState(self, request, context):
         headers = ()
         trailers = ()
         key = request.key
@@ -154,7 +154,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
         context.set_trailing_metadata(trailers)
         return empty_pb2.Empty()
 
-    def GetSecret(self, request, context) -> api_v1.GetSecretResponse:
+    async def GetSecret(self, request, context) -> api_v1.GetSecretResponse:
         headers = ()
         trailers = ()
 
@@ -170,7 +170,7 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.GetSecretResponse(data=resp)
 
-    def GetBulkSecret(self, request, context) -> api_v1.GetBulkSecretResponse:
+    async def GetBulkSecret(self, request, context) -> api_v1.GetBulkSecretResponse:
         headers = ()
         trailers = ()
 
@@ -184,21 +184,21 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.GetBulkSecretResponse(data=resp)
 
-    def GetConfigurationAlpha1(self, request, context):
+    async def GetConfigurationAlpha1(self, request, context):
         items = []
         for key in request.keys:
             item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
             items.append(item)
         return api_v1.GetConfigurationResponse(items=items)
 
-    def SubscribeConfigurationAlpha1(self, request, context):
+    async def SubscribeConfigurationAlpha1(self, request, context):
         items = []
         for key in request.keys:
             item = {'key': key, 'value': 'value', 'version': '1.5.0', 'metadata': {}}
             items.append(item)
         return api_v1.SubscribeConfigurationResponse(items=items)
 
-    def QueryStateAlpha1(self, request, context):
+    async def QueryStateAlpha1(self, request, context):
         items = [QueryStateItem(
             key=str(key), data=bytes('value of ' + str(key), 'UTF-8')) for key in range(1, 11)]
         query = json.loads(request.query)
@@ -217,6 +217,6 @@ class FakeDaprSidecar(api_service_v1.DaprServicer):
 
         return api_v1.QueryStateResponse(results=items, token=str(tokenIndex))
 
-    def Shutdown(self, request, context):
+    async def Shutdown(self, request, context):
         self.shutdown_received = True
         return empty_pb2.Empty()

@@ -3,6 +3,7 @@
 dapr run python3 state_store.py
 """
 
+import asyncio
 import grpc
 
 from dapr.clients import DaprClient
@@ -10,73 +11,81 @@ from dapr.clients import DaprClient
 from dapr.clients.grpc._request import TransactionalStateOperation, TransactionOperationType
 from dapr.clients.grpc._state import StateItem
 
-with DaprClient() as d:
-    storeName = 'statestore'
 
-    key = "key_1"
-    value = "value_1"
-    updated_value = "value_1_updated"
+async def runAsync():
+    with DaprClient() as d:
+        storeName = 'statestore'
 
-    another_key = "key_2"
-    another_value = "value_2"
+        key = "key_1"
+        value = "value_1"
+        updated_value = "value_1_updated"
 
-    yet_another_key = "key_3"
-    yet_another_value = "value_3"
+        another_key = "key_2"
+        another_value = "value_2"
 
-    # Wait for sidecar to be up within 5 seconds.
-    d.wait(5)
+        yet_another_key = "key_3"
+        yet_another_value = "value_3"
 
-    # Save single state.
-    d.save_state(store_name=storeName, key=key, value=value)
-    print(f"State store has successfully saved {value} with {key} as key")
+        # Wait for sidecar to be up within 5 seconds.
+        await d.wait(5)
 
-    # Save with an etag that is different from the one stored in the database.
-    try:
-        d.save_state(store_name=storeName, key=key, value=another_value, etag="9999")
-    except grpc.RpcError as err:
-        # StatusCode should be StatusCode.ABORTED.
-        print(f"Cannot save due to bad etag. ErrorCode={err.code()}")
+        # Save single state.
+        await d.save_state(store_name=storeName, key=key, value=value)
+        print(f"State store has successfully saved {value} with {key} as key")
 
-        # For detailed error messages from the dapr runtime:
-        # print(f"Details={err.details()})
+        # Save with an etag that is different from the one stored in the database.
+        try:
+            await d.save_state(store_name=storeName, key=key, value=another_value, etag="9999")
+        except grpc.RpcError as err:
+            # StatusCode should be StatusCode.ABORTED.
+            print(f"Cannot save due to bad etag. ErrorCode={err.code()}")
 
-    # Save multiple states.
-    d.save_bulk_state(store_name=storeName, states=[StateItem(key=another_key, value=another_value),
-        StateItem(key=yet_another_key, value=yet_another_value)])
-    print(f"State store has successfully saved {another_value} with {another_key} as key")
-    print(f"State store has successfully saved {yet_another_value} with {yet_another_key} as key")
+            # For detailed error messages from the dapr runtime:
+            # print(f"Details={err.details()})
 
-    # Save bulk with etag that is different from the one stored in the database.
-    try:
-        d.save_bulk_state(store_name=storeName, states=[
-            StateItem(key=another_key, value=another_value, etag="999"),
-            StateItem(key=yet_another_key, value=yet_another_value, etag="999")])
-    except grpc.RpcError as err:
-        # StatusCode should be StatusCode.ABORTED.
-        print(f"Cannot save bulk due to bad etags. ErrorCode={err.code()}")
-        
-        # For detailed error messages from the dapr runtime:
-        # print(f"Details={err.details()})
+        # Save multiple states.
+        await d.save_bulk_state(store_name=storeName, states=[StateItem(key=another_key,
+                                                              value=another_value),
+                                StateItem(key=yet_another_key, value=yet_another_value)])
+        print(f"State store has successfully saved {another_value} with {another_key} as key")
+        print(f"State store has successfully saved {yet_another_value} "
+              "with {yet_another_key} as key")
 
-    # Get one state by key.
-    state = d.get_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"})
-    print(f"Got value={state.data} eTag={state.etag}")
+        # Save bulk with etag that is different from the one stored in the database.
+        try:
+            await d.save_bulk_state(store_name=storeName, states=[
+                StateItem(key=another_key, value=another_value, etag="999"),
+                StateItem(key=yet_another_key, value=yet_another_value, etag="999")])
+        except grpc.RpcError as err:
+            # StatusCode should be StatusCode.ABORTED.
+            print(f"Cannot save bulk due to bad etags. ErrorCode={err.code()}")
 
-    # Transaction upsert
-    d.execute_state_transaction(store_name=storeName, operations=[
-        TransactionalStateOperation(
-            operation_type=TransactionOperationType.upsert,
-            key=key,
-            data=updated_value,
-            etag=state.etag),
-        TransactionalStateOperation(key=another_key, data=another_value),
-    ])
+            # For detailed error messages from the dapr runtime:
+            # print(f"Details={err.details()})
 
-    # Batch get
-    items = d.get_bulk_state(store_name=storeName, keys=[key, another_key], states_metadata={"metakey": "metavalue"}).items
-    print(f"Got items with etags: {[(i.data, i.etag) for i in items]}")
+        # Get one state by key.
+        state = await d.get_state(store_name=storeName, key=key,
+                                  state_metadata={"metakey": "metavalue"})
+        print(f"Got value={state.data} eTag={state.etag}")
 
-    # Delete one state by key.
-    d.delete_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"})
-    data = d.get_state(store_name=storeName, key=key).data
-    print(f"Got value after delete: {data}")
+        # Transaction upsert
+        d.execute_state_transaction(store_name=storeName, operations=[
+            TransactionalStateOperation(
+                operation_type=TransactionOperationType.upsert,
+                key=key,
+                data=updated_value,
+                etag=state.etag),
+            TransactionalStateOperation(key=another_key, data=another_value),
+        ])
+
+        # Batch get
+        items = await d.get_bulk_state(store_name=storeName, keys=[key, another_key],
+                                       states_metadata={"metakey": "metavalue"}).items
+        print(f"Got items with etags: {[(i.data, i.etag) for i in items]}")
+
+        # Delete one state by key.
+        await d.delete_state(store_name=storeName, key=key, state_metadata={"metakey": "metavalue"})
+        data = await d.get_state(store_name=storeName, key=key).data
+        print(f"Got value after delete: {data}")
+
+asyncio.run(runAsync())

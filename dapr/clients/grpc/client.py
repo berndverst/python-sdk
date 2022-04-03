@@ -25,8 +25,8 @@ from typing import Dict, Optional, Union, Sequence, List
 from google.protobuf.message import Message as GrpcMessage
 from google.protobuf.empty_pb2 import Empty as GrpcEmpty
 
-import grpc  # type: ignore
-from grpc import (  # type: ignore
+import grpc.aio as grpc  # type: ignore
+from grpc.aio import (  # type: ignore
     UnaryUnaryClientInterceptor,
     UnaryStreamClientInterceptor,
     StreamUnaryClientInterceptor,
@@ -70,14 +70,14 @@ class DaprGrpcClient:
 
         >>> from dapr.clients import DaprClient
         >>> d = DaprClient()
-        >>> resp = d.invoke_method('callee', 'method', b'data')
+        >>> resp = await d.invoke_method('callee', 'method', b'data')
 
     With context manager and custom message size limit:
 
         >>> from dapr.clients import DaprClient
         >>> MAX = 64 * 1024 * 1024 # 64MB
         >>> with DaprClient(max_message_length=MAX) as d:
-        ...     resp = d.invoke_method('callee', 'method', b'data')
+        ...     resp = await d.invoke_method('callee', 'method', b'data')
     """
 
     def __init__(
@@ -123,21 +123,21 @@ class DaprGrpcClient:
 
         self._stub = api_service_v1.DaprStub(self._channel)
 
-    def close(self):
+    async def close(self):
         """Closes Dapr runtime gRPC channel."""
         if self._channel:
-            self._channel.close()
+            await self._channel.close()
 
-    def __del__(self):
-        self.close()
+    async def __del__(self):
+        await self.close()
 
-    def __enter__(self) -> 'DaprGrpcClient':
+    async def __enter__(self) -> 'DaprGrpcClient':
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self.close()
+    async def __exit__(self, exc_type, exc_value, traceback) -> None:
+        await self.close()
 
-    def _get_http_extension(
+    async def _get_http_extension(
             self, http_verb: str,
             http_querystring: Optional[MetadataTuple] = None
     ) -> common_v1.HTTPExtension:  # type: ignore
@@ -147,7 +147,7 @@ class DaprGrpcClient:
             http_ext.querystring = urlencode(http_querystring)
         return http_ext
 
-    def invoke_method(
+    async def invoke_method(
             self,
             app_id: str,
             method_name: str,
@@ -235,7 +235,7 @@ class DaprGrpcClient:
         req_data = InvokeMethodRequest(data, content_type)
         http_ext = None
         if http_verb:
-            http_ext = self._get_http_extension(http_verb, http_querystring)
+            http_ext = await self._get_http_extension(http_verb, http_querystring)
 
         content_type = ""
         if req_data.content_type:
@@ -249,13 +249,12 @@ class DaprGrpcClient:
                 http_extension=http_ext)
         )
 
-        response, call = self._stub.InvokeService.with_call(req, metadata=metadata)
+        response = await self._stub.InvokeService(req, metadata=metadata)
 
         resp_data = InvokeMethodResponse(response.data, response.content_type)
-        resp_data.headers = call.initial_metadata()  # type: ignore
         return resp_data
 
-    def invoke_binding(
+    async def invoke_binding(
             self,
             binding_name: str,
             operation: str,
@@ -305,12 +304,11 @@ class DaprGrpcClient:
             operation=operation
         )
 
-        response, call = self._stub.InvokeBinding.with_call(req, metadata=metadata)
+        response = await self._stub.InvokeBinding(req, metadata=metadata)
         return BindingResponse(
-            response.data, dict(response.metadata),
-            call.initial_metadata())
+            response.data, dict(response.metadata))
 
-    def publish_event(
+    async def publish_event(
             self,
             pubsub_name: str,
             topic_name: str,
@@ -372,11 +370,11 @@ class DaprGrpcClient:
             metadata=publish_metadata)
 
         # response is google.protobuf.Empty
-        _, call = self._stub.PublishEvent.with_call(req, metadata=metadata)
+        await self._stub.PublishEvent(req, metadata=metadata)
 
-        return DaprResponse(call.initial_metadata())
+        return DaprResponse()
 
-    def get_state(
+    async def get_state(
             self,
             store_name: str,
             key: str,
@@ -411,13 +409,12 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("State store name cannot be empty")
         req = api_v1.GetStateRequest(store_name=store_name, key=key, metadata=state_metadata)
-        response, call = self._stub.GetState.with_call(req, metadata=metadata)
+        response = await self._stub.GetState(req, metadata=metadata)
         return StateResponse(
             data=response.data,
-            etag=response.etag,
-            headers=call.initial_metadata())
+            etag=response.etag)
 
-    def get_bulk_state(
+    async def get_bulk_state(
             self,
             store_name: str,
             keys: Sequence[str],
@@ -458,7 +455,7 @@ class DaprGrpcClient:
             keys=keys,
             parallelism=parallelism,
             metadata=states_metadata)
-        response, call = self._stub.GetBulkState.with_call(req, metadata=metadata)
+        response = await self._stub.GetBulkState(req, metadata=metadata)
 
         items = []
         for item in response.items:
@@ -469,10 +466,9 @@ class DaprGrpcClient:
                     etag=item.etag,
                     error=item.error))
         return BulkStatesResponse(
-            items=items,
-            headers=call.initial_metadata())
+            items=items)
 
-    def query_state(
+    async def query_state(
             self,
             store_name: str,
             query: str,
@@ -523,7 +519,7 @@ class DaprGrpcClient:
             store_name=store_name,
             query=query,
             metadata=states_metadata)
-        response, call = self._stub.QueryStateAlpha1.with_call(req)
+        response = await self._stub.QueryStateAlpha1(req)
 
         results = []
         for item in response.results:
@@ -538,10 +534,9 @@ class DaprGrpcClient:
         return QueryResponse(
             token=response.token,
             results=results,
-            metadata=response.metadata,
-            headers=call.initial_metadata())
+            metadata=response.metadata)
 
-    def save_state(
+    async def save_state(
             self,
             store_name: str,
             key: str,
@@ -609,11 +604,10 @@ class DaprGrpcClient:
             metadata=state_metadata)
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=[state])
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
-        return DaprResponse(
-            headers=call.initial_metadata())
+        await self._stub.SaveState(req, metadata=metadata)
+        return DaprResponse()
 
-    def save_bulk_state(
+    async def save_bulk_state(
             self,
             store_name: str,
             states: List[StateItem],
@@ -661,11 +655,10 @@ class DaprGrpcClient:
             metadata=i.metadata) for i in states]
 
         req = api_v1.SaveStateRequest(store_name=store_name, states=req_states)
-        _, call = self._stub.SaveState.with_call(req, metadata=metadata)
-        return DaprResponse(
-            headers=call.initial_metadata())
+        await self._stub.SaveState(req, metadata=metadata)
+        return DaprResponse()
 
-    def execute_state_transaction(
+    async def execute_state_transaction(
             self,
             store_name: str,
             operations: Sequence[TransactionalStateOperation],
@@ -719,11 +712,10 @@ class DaprGrpcClient:
             storeName=store_name,
             operations=req_ops,
             metadata=transactional_metadata)
-        _, call = self._stub.ExecuteStateTransaction.with_call(req, metadata=metadata)
-        return DaprResponse(
-            headers=call.initial_metadata())
+        await self._stub.ExecuteStateTransaction(req, metadata=metadata)
+        return DaprResponse()
 
-    def delete_state(
+    async def delete_state(
             self,
             store_name: str,
             key: str,
@@ -775,11 +767,10 @@ class DaprGrpcClient:
         req = api_v1.DeleteStateRequest(store_name=store_name, key=key,
                                         etag=etag_object, options=state_options,
                                         metadata=state_metadata)
-        _, call = self._stub.DeleteState.with_call(req, metadata=metadata)
-        return DaprResponse(
-            headers=call.initial_metadata())
+        await self._stub.DeleteState(req, metadata=metadata)
+        return DaprResponse()
 
-    def get_secret(
+    async def get_secret(
             self,
             store_name: str,
             key: str,
@@ -824,13 +815,12 @@ class DaprGrpcClient:
             key=key,
             metadata=secret_metadata)
 
-        response, call = self._stub.GetSecret.with_call(req, metadata=metadata)
+        response = await self._stub.GetSecret(req, metadata=metadata)
 
         return GetSecretResponse(
-            secret=response.data,
-            headers=call.initial_metadata())
+            secret=response.data)
 
-    def get_bulk_secret(
+    async def get_bulk_secret(
             self,
             store_name: str,
             secret_metadata: Optional[Dict[str, str]] = {},
@@ -870,7 +860,7 @@ class DaprGrpcClient:
             store_name=store_name,
             metadata=secret_metadata)
 
-        response, call = self._stub.GetBulkSecret.with_call(req, metadata=metadata)
+        response = await self._stub.GetBulkSecret(req, metadata=metadata)
 
         secrets_map = {}
         for key in response.data.keys():
@@ -881,10 +871,9 @@ class DaprGrpcClient:
             secrets_map[key] = secrets_submap
 
         return GetBulkSecretResponse(
-            secrets=secrets_map,
-            headers=call.initial_metadata())
+            secrets=secrets_map)
 
-    def get_configuration(
+    async def get_configuration(
             self,
             store_name: str,
             keys: str,
@@ -916,7 +905,7 @@ class DaprGrpcClient:
             raise ValueError("Config store name cannot be empty to get the configuration")
         req = api_v1.GetConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
-        response, call = self._stub.GetConfigurationAlpha1.with_call(req)
+        response = await self._stub.GetConfigurationAlpha1(req)
         items = []
         for item in response.items:
             items.append(
@@ -925,8 +914,7 @@ class DaprGrpcClient:
                     value=item.value,
                     version=item.version))
         return ConfigurationResponse(
-            items=items,
-            headers=call.initial_metadata())
+            items=items)
 
     async def subscribe_configuration(
             self,
@@ -959,10 +947,10 @@ class DaprGrpcClient:
         if not store_name or len(store_name) == 0 or len(store_name.strip()) == 0:
             raise ValueError("Config store name cannot be empty to get the configuration")
         configWatcher = ConfigurationWatcher()
-        configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
+        await configWatcher.watch_configuration(self._stub, store_name, keys, config_metadata)
         return configWatcher
 
-    def wait(self, timeout_s: float):
+    async def wait(self, timeout_s: float):
         """Waits for sidecar to be available within the timeout.
 
         It checks if sidecar socket is available within the given timeout.
@@ -994,7 +982,7 @@ class DaprGrpcClient:
                         raise e
                     time.sleep(min(1, remaining))
 
-    def shutdown(self) -> DaprResponse:
+    async def shutdown(self) -> DaprResponse:
         """Shutdown the sidecar.
 
         This will ask the sidecar to gracefully shutdown.
@@ -1010,6 +998,6 @@ class DaprGrpcClient:
             :class:`DaprResponse` gRPC metadata returned from callee
         """
 
-        _, call = self._stub.Shutdown.with_call(GrpcEmpty())
+        await self._stub.Shutdown(GrpcEmpty())
 
-        return DaprResponse(call.initial_metadata())
+        return DaprResponse()

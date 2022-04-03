@@ -671,13 +671,14 @@ class ConfigurationWatcher():
     def get_items(self):
         return self.items
 
-    def watch_configuration(self, stub, store_name, keys, config_metadata):
+    async def watch_configuration(self, stub, store_name, keys, config_metadata):
         req = api_v1.SubscribeConfigurationRequest(
             store_name=store_name, keys=keys, metadata=config_metadata)
         thread = threading.Thread(target=self._read_subscribe_config, args=(stub, req))
         thread.daemon = True
         thread.start()
 
+    # keep this separate thread execution synchronous
     def _read_subscribe_config(self, stub, req):
         responses = stub.SubscribeConfigurationAlpha1(req)
         for response in responses:
