@@ -19,7 +19,7 @@ from dapr.clients import DaprClient
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         id = 0
         while True:
             id += 1
@@ -40,4 +40,9 @@ async def runAsync():
             print(req_data, flush=True)
             time.sleep(2)
 
-asyncio.run(runAsync())
+try:
+    loop = asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+loop.run_until_complete(runAsync())

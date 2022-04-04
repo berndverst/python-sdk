@@ -6,7 +6,7 @@ from dapr.clients import DaprClient
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         n = 0
         while True:
             n += 1

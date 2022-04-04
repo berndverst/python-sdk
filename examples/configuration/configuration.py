@@ -8,7 +8,7 @@ from dapr.clients import DaprClient
 
 
 async def executeConfiguration():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         storeName = 'configurationstore'
 
         key = 'orderId'

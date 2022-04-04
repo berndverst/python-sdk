@@ -5,7 +5,7 @@ import proto.response_pb2 as response_messages
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         # Create a typed message with content type and body
         resp = await d.invoke_method(
             app_id='invoke-receiver',

@@ -16,7 +16,7 @@ from dapr.clients import DaprClient
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         key = 'secretKey'
         randomKey = "random"
         storeName = 'localsecretstore'

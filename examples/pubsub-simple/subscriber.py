@@ -1,3 +1,4 @@
+import asyncio
 from cloudevents.sdk.event import v1
 from dapr.ext.grpc import App
 from dapr.clients.grpc._response import TopicEventResponse
@@ -20,4 +21,9 @@ def mytopic(event: v1.Event) -> TopicEventResponse:
     return TopicEventResponse('success')
 
 
-app.run(50051)
+try:
+    loop = asyncio.get_running_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+loop.run_until_complete(app.run(50051))

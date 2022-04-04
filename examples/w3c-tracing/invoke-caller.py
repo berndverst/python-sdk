@@ -18,7 +18,7 @@ async def runAsync():
     tracer = Tracer(exporter=ze, sampler=AlwaysOnSampler())
 
     with tracer.span(name="main"):
-        with DaprClient(headers_callback=lambda: tracer.propagator.to_headers(
+        async with DaprClient(headers_callback=lambda: tracer.propagator.to_headers(
                         tracer.span_context)) as d:
 
             num_messages = 2

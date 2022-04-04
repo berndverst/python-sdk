@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import asyncio
 import threading
 from enum import Enum
 from typing import Dict, Optional, Union, Sequence
@@ -678,9 +679,8 @@ class ConfigurationWatcher():
         thread.daemon = True
         thread.start()
 
-    # keep this separate thread execution synchronous
     def _read_subscribe_config(self, stub, req):
-        responses = stub.SubscribeConfigurationAlpha1(req)
+        responses = asyncio.run(stub.SubscribeConfigurationAlpha1(req))
         for response in responses:
             for item in response.items:
                 self.items.append(

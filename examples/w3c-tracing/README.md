@@ -134,7 +134,7 @@ ze = ZipkinExporter(
 tracer = Tracer(exporter=ze, sampler=AlwaysOnSampler())
 
 with tracer.span(name="main") as span:
-    with DaprClient(tracer=tracer) as d:
+    async with DaprClient(tracer=tracer) as d:
 
         num_messages = 2
 

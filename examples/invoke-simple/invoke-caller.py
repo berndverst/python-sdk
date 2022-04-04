@@ -6,7 +6,7 @@ from dapr.clients import DaprClient
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         req_data = {
             'id': 1,
             'message': 'hello world'

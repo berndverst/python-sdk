@@ -13,7 +13,7 @@ from dapr.clients.grpc._state import StateItem
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         storeName = 'statestore'
 
         key = "key_1"

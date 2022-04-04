@@ -48,7 +48,7 @@ class App:
             self._server = grpc.aio.server(**kwargs)   # type: ignore
         appcallback_service_v1.add_AppCallbackServicer_to_server(self._servicer, self._server)
 
-    async def __del__(self):
+    async def __exit__(self):
         await self.stop()
 
     def add_external_service(self, servicer_callback, external_servicer):
@@ -59,7 +59,7 @@ class App:
         """Starts app gRPC server and waits until :class:`App`.stop() is called."""
         if app_port is None:
             app_port = settings.GRPC_APP_PORT
-        await self._server.add_insecure_port(f'[::]:{app_port}')
+        self._server.add_insecure_port(f'[::]:{app_port}')
         await self._server.start()
         await self._server.wait_for_termination()
 

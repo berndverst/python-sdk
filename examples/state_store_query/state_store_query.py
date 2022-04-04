@@ -10,7 +10,7 @@ import json
 
 
 async def runAsync():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         storeName = 'statestore'
 
         # Wait for sidecar to be up within 5 seconds.

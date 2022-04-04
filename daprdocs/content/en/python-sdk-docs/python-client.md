@@ -82,7 +82,7 @@ with DaprClient() as d:
     }
     '''
 
-    with DaprClient() as d:
+    async with DaprClient() as d:
         resp = d.query_state(
             store_name='state_store',
             query=query,
@@ -174,7 +174,7 @@ from time import sleep
 from dapr.clients import DaprClient
 
 async def executeConfiguration():
-    with DaprClient() as d:
+    async with DaprClient() as d:
         storeName = 'configurationstore'
 
         key = 'orderId'
