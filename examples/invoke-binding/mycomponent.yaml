@@ -1,0 +1,7 @@
+componentType: bindings.azure.blobstorage
+version: v1
+metadata:
+- name: storageAccount
+  value: berndverstctstorage
+- name: container
+  value: capps
