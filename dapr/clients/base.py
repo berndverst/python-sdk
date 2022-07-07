@@ -19,6 +19,7 @@ from typing import Optional
 
 DEFAULT_ENCODING = 'utf-8'
 DEFAULT_JSON_CONTENT_TYPE = f'application/json; charset={DEFAULT_ENCODING}'
+DEFAULT_CLOUD_EVENT_CONTENT_TYPE = 'application/cloudevents+json'
 
 
 class DaprActorClientBase(ABC):

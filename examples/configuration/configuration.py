@@ -19,8 +19,6 @@ async def executeConfiguration():
         # Wait for sidecar to be up within 20 seconds.
         d.wait(20)
 
-        global configuration
-
         # Get one configuration by key.
         configuration = d.get_configuration(store_name=storeName, keys=keys, config_metadata={})
         print(f"Got key={configuration.items[0].key} "
@@ -46,5 +44,7 @@ async def executeConfiguration():
         # Unsubscribe from configuration
         isSuccess = d.unsubscribe_configuration(store_name=storeName, key=keys[1])
         print(f"Unsubscribed successfully? {isSuccess}", flush=True)
+
+        sleep(3)  # sleep so we can observe the configuration watcher stopping
 
 asyncio.run(executeConfiguration())

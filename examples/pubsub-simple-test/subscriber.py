@@ -26,28 +26,25 @@ should_retry = True  # To control whether dapr should retry sending a message
 @app.subscribe(pubsub_name='pubsub', topic='TOPIC_A')
 def mytopic(event: v1.Event) -> TopicEventResponse:
     global should_retry
-    # print(event, flush=True)
-    print(event.ContentType(), flush=True)
-    # print(event.Data(), flush=True)
-    for k, v in event.Extensions().items():
-        print(f"{k}: {v}", flush=True)
-    # data = json.loads(event.Data())
-    # # print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
-    # #      f'content_type="{event.content_type}"', flush=True)
-    # print(data, flush=True)
-    # if should_retry:
-    #     should_retry = False  # we only retry once in this example
-    #     sleep(0.5)  # add some delay to help with ordering of expected logs
-    #     return TopicEventResponse('retry')
+    data = json.loads(event.Data())
+
+    # print(str(event.Extensions()))
+
+    print(f'Subscriber received: id={data["id"]}, message="{data["message"]}", '
+          f'content_type="{event.content_type}"', flush=True)
+    if should_retry:
+        should_retry = False  # we only retry once in this example
+        sleep(0.5)  # add some delay to help with ordering of expected logs
+        return TopicEventResponse('retry')
     return TopicEventResponse('success')
 
 
 # == for testing with Redis only ==
 # workaround as redis pubsub does not support wildcards
 # we manually register the distinct topics
-# for id in range(4, 7):
-#     app._servicer._registered_topics.append(appcallback_v1.TopicSubscription(
-#         pubsub_name='pubsub', topic=f'topic/{id}'))
+for id in range(4, 7):
+    app._servicer._registered_topics.append(appcallback_v1.TopicSubscription(
+        pubsub_name='pubsub', topic=f'topic/{id}'))
 # =================================
 
 

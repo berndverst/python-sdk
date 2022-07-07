@@ -20,17 +20,31 @@ with DaprClient() as d:
     id = 0
     while id < 3:
         id += 1
+
         req_data = {
             'id': id,
             'message': 'hello world'
         }
+        envelope = {
+            "specversion": "1.0",
+            "type": "com.dapr.cloudevent.sent",
+            "source": "testcloudeventspubsub",
+            "subject": "Cloud Events Test",
+            "berndnumber": 112,
+            "berndempty": None,
+            "berndtext": "something",
+            "berndbool": True,
+            "id": f"{id}",
+            "time": "2021-08-02T09:00:00Z",
+            "datacontenttype": "application/cloudevents+json",
+            "data": req_data}
 
         # Create a typed message with content type and body
         resp = d.publish_event(
             pubsub_name='pubsub',
             topic_name='TOPIC_A',
-            data=json.dumps(req_data),
-            data_content_type='application/json',
+            data=json.dumps(envelope),
+            data_content_type='application/cloudevents+json',
         )
 
         # Print the request
@@ -41,21 +55,21 @@ with DaprClient() as d:
     # we can publish events to different topics but handle them with the same method
     # by disabling topic validation in the subscriber
 
-    id = 3
-    while id < 6:
-        id += 1
-        req_data = {
-            'id': id,
-            'message': 'hello world'
-        }
-        resp = d.publish_event(
-            pubsub_name='pubsub',
-            topic_name=f'topic/{id}',
-            data=json.dumps(req_data),
-            data_content_type='application/json',
-        )
+    # id = 3
+    # while id < 6:
+    #     id += 1
+    #     req_data = {
+    #         'id': id,
+    #         'message': 'hello world'
+    #     }
+    #     resp = d.publish_event(
+    #         pubsub_name='pubsub',
+    #         topic_name=f'topic/{id}',
+    #         data=json.dumps(req_data),
+    #         data_content_type='application/json',
+    #     )
 
-        # Print the request
-        print(req_data, flush=True)
+    #     # Print the request
+    #     print(req_data, flush=True)
 
-        time.sleep(0.5)
+    #     time.sleep(0.5)

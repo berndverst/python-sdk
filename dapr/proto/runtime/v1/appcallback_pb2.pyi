@@ -18,6 +18,21 @@ class TopicEventRequest(google.protobuf.message.Message):
     https://github.com/cloudevents/spec/blob/v1.0/spec.md
     """
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    class AttributesEntry(google.protobuf.message.Message):
+        DESCRIPTOR: google.protobuf.descriptor.Descriptor
+        KEY_FIELD_NUMBER: builtins.int
+        VALUE_FIELD_NUMBER: builtins.int
+        key: typing.Text
+        @property
+        def value(self) -> global___CloudEventAttributeValue: ...
+        def __init__(self,
+            *,
+            key: typing.Text = ...,
+            value: typing.Optional[global___CloudEventAttributeValue] = ...,
+            ) -> None: ...
+        def HasField(self, field_name: typing_extensions.Literal["value",b"value"]) -> builtins.bool: ...
+        def ClearField(self, field_name: typing_extensions.Literal["key",b"key","value",b"value"]) -> None: ...
+
     ID_FIELD_NUMBER: builtins.int
     SOURCE_FIELD_NUMBER: builtins.int
     TYPE_FIELD_NUMBER: builtins.int
@@ -27,6 +42,9 @@ class TopicEventRequest(google.protobuf.message.Message):
     TOPIC_FIELD_NUMBER: builtins.int
     PUBSUB_NAME_FIELD_NUMBER: builtins.int
     PATH_FIELD_NUMBER: builtins.int
+    TRACEPARENT_FIELD_NUMBER: builtins.int
+    TRACESTATE_FIELD_NUMBER: builtins.int
+    ATTRIBUTES_FIELD_NUMBER: builtins.int
     id: typing.Text
     """id identifies the event. Producers MUST ensure that source + id 
     is unique for each distinct event. If a duplicate event is re-sent
@@ -64,6 +82,18 @@ class TopicEventRequest(google.protobuf.message.Message):
     This value is used by OnTopicEvent to "switch" inside the handler.
     """
 
+    traceparent: typing.Text
+    """The trace information of the event."""
+
+    tracestate: typing.Text
+    """Additional trace information of the event."""
+
+    @property
+    def attributes(self) -> google.protobuf.internal.containers.MessageMap[typing.Text, global___CloudEventAttributeValue]:
+        """The cloud event extension attributes (custom attributes).
+        Compatible with the cloud events v1.0.2 spec.
+        """
+        pass
     def __init__(self,
         *,
         id: typing.Text = ...,
@@ -75,9 +105,34 @@ class TopicEventRequest(google.protobuf.message.Message):
         topic: typing.Text = ...,
         pubsub_name: typing.Text = ...,
         path: typing.Text = ...,
+        traceparent: typing.Text = ...,
+        tracestate: typing.Text = ...,
+        attributes: typing.Optional[typing.Mapping[typing.Text, global___CloudEventAttributeValue]] = ...,
         ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["data",b"data","data_content_type",b"data_content_type","id",b"id","path",b"path","pubsub_name",b"pubsub_name","source",b"source","spec_version",b"spec_version","topic",b"topic","type",b"type"]) -> None: ...
+    def ClearField(self, field_name: typing_extensions.Literal["attributes",b"attributes","data",b"data","data_content_type",b"data_content_type","id",b"id","path",b"path","pubsub_name",b"pubsub_name","source",b"source","spec_version",b"spec_version","topic",b"topic","traceparent",b"traceparent","tracestate",b"tracestate","type",b"type"]) -> None: ...
 global___TopicEventRequest = TopicEventRequest
+
+class CloudEventAttributeValue(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+    CE_BOOLEAN_FIELD_NUMBER: builtins.int
+    CE_INTEGER_FIELD_NUMBER: builtins.int
+    CE_STRING_FIELD_NUMBER: builtins.int
+    CE_BYTES_FIELD_NUMBER: builtins.int
+    ce_boolean: builtins.bool
+    ce_integer: builtins.int
+    ce_string: typing.Text
+    ce_bytes: builtins.bytes
+    def __init__(self,
+        *,
+        ce_boolean: builtins.bool = ...,
+        ce_integer: builtins.int = ...,
+        ce_string: typing.Text = ...,
+        ce_bytes: builtins.bytes = ...,
+        ) -> None: ...
+    def HasField(self, field_name: typing_extensions.Literal["attr",b"attr","ce_boolean",b"ce_boolean","ce_bytes",b"ce_bytes","ce_integer",b"ce_integer","ce_string",b"ce_string"]) -> builtins.bool: ...
+    def ClearField(self, field_name: typing_extensions.Literal["attr",b"attr","ce_boolean",b"ce_boolean","ce_bytes",b"ce_bytes","ce_integer",b"ce_integer","ce_string",b"ce_string"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions.Literal["attr",b"attr"]) -> typing.Optional[typing_extensions.Literal["ce_boolean","ce_integer","ce_string","ce_bytes"]]: ...
+global___CloudEventAttributeValue = CloudEventAttributeValue
 
 class TopicEventResponse(google.protobuf.message.Message):
     """TopicEventResponse is response from app on published message"""

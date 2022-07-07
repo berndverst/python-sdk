@@ -1,6 +1,6 @@
 # Example - Publish and subscribe to messages
 
-This example utilizes a publisher and a subscriber to show the pubsub pattern, it also shows `PublishEvent`, `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
+This example utilizes a publisher and a ubscriber to show the pubsub pattern, it also shows `PublishEvent`, `OnTopicEvent`, `GetTopicSubscriptions`, and `TopicEventResponse` functionality.
 It creates a publisher and calls the `publish_event` method in the `DaprClient`.
 It will create a gRPC subscriber and bind the `OnTopicEvent` method, which gets triggered after a message is published to the subscribed topic.
 The subscriber will tell dapr to retry delivery of the first message it receives, logging that the message will be retried, and printing it at least once to standard output.
@@ -31,6 +31,9 @@ expected_stdout_lines:
   - 'RETRY status returned from app while processing pub/sub event'
   - '== APP == Subscriber received: id=2, message="hello world", content_type="application/json"'
   - '== APP == Subscriber received: id=3, message="hello world", content_type="application/json"'
+  - '== APP == Wildcard-Subscriber received: id=4, message="hello world", content_type="application/json"'
+  - '== APP == Wildcard-Subscriber received: id=5, message="hello world", content_type="application/json"'
+  - '== APP == Wildcard-Subscriber received: id=6, message="hello world", content_type="application/json"'
 output_match_mode: substring
 background: true
 sleep: 3 
@@ -51,6 +54,8 @@ expected_stdout_lines:
   - "== APP == {'id': 1, 'message': 'hello world'}"
   - "== APP == {'id': 2, 'message': 'hello world'}"
   - "== APP == {'id': 3, 'message': 'hello world'}"
+  - "== APP == {'id': 4, 'message': 'hello world'}"
+  - "== APP == {'id': 5, 'message': 'hello world'}"
 background: true
 sleep: 15
 -->
