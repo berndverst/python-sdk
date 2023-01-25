@@ -185,6 +185,7 @@ class DaprServicer(object):
 
     def InvokeService(self, request, context):
         """Invokes a method on a remote Dapr app.
+        Deprecated: Use proxy mode service invocation instead.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
